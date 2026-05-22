@@ -2,6 +2,7 @@
 --@author 142kb
 --@owneronly
 --@server
+--@github https://github.com/shiftytab/gmod-scripts/blob/main/Starfall/player-selector.lua
 
 -- 
 --  WIRE
