@@ -2,11 +2,11 @@
 --@author 142kb
 --@owneronly
 --@server
-
+--@github https://github.com/shiftytab/gmod-scripts/blob/main/Starfall/spy-drone.lua
 
 wire.adjustInputs(
-    { "Activate",  "TargetName", "Base",   "Drone"   },
-    { "number",    "string",     "entity", "entity"  }
+    { "Activate",  "TargetName", "Base",   "Drone", "INCREASE_FOV", "DECREASE_FOV"   },
+    { "number",    "string",     "entity", "entity", "number", "number"  }
 )
 
 wire.adjustOutputs(
@@ -15,6 +15,8 @@ wire.adjustOutputs(
 )
 
 local CAMERA_DISTANCE = 1.5
+local CAMERA_MIN_DISTANCE = 1.2
+local CAMERA_MAX_DISTANCE = 5
 local LOOP_INTERVAL   = 0.01
 local TIMER_NAME      = "drone_loop"
 local DRONE_BASE_HEIGHT = 0.5
@@ -132,7 +134,17 @@ hook.add("input", "onWireInput", function(portName, value)
         else
             deactivate()
         end
+        
+    elseif portName == "INCREASE_FOV" then
+        if CAMERA_DISTANCE < CAMERA_MAX_DISTANCE then
+            CAMERA_DISTANCE = CAMERA_DISTANCE + 0.15
+        end
 
+    elseif portName == "DECREASE_FOV" then
+        if CAMERA_DISTANCE > CAMERA_MIN_DISTANCE then
+            CAMERA_DISTANCE = CAMERA_DISTANCE - 0.15
+        end
+    
     elseif portName == "TargetName" then
         target = nil
         if isRunning then refreshTarget(2) end
