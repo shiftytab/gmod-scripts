@@ -63,6 +63,7 @@ local function teleportToTarget()
     if not valid(drone) or not valid(target) then return end
 
     local pos = target:getPos() + Vector(0, 0, CAMERA_DISTANCE * 100)
+    drone:setMaterial("Models/effects/comball_tape")
     drone:setPos(pos)
     drone:setAngles(Angle(25, target:getEyeAngles().y + 180, 0))
     wire.ports.TargetPos = pos
@@ -75,6 +76,7 @@ local function returnToBase()
     if valid(drone) and valid(base) then
         drone:setPos(base:getPos() + Vector(0, 0, DRONE_BASE_HEIGHT * 100))
         drone:setAngles(Angle(0, 0, 0))
+        drone:setMaterial("models/XQM/CellShadedCamo_diffuse")
     end
 
     wire.ports.TargetPos = Vector(0, 0, 0)
@@ -112,7 +114,6 @@ local function activate()
     isRunning = true
     refreshTarget()
     timer.create(TIMER_NAME, LOOP_INTERVAL, 0, droneLoop)
-    print(Color(80, 255, 120), "[Drone] Activated, tracking in progress")
 end
 
 local function deactivate()
@@ -120,7 +121,6 @@ local function deactivate()
     timer.remove(TIMER_NAME)
     target = nil
     returnToBase()
-    print(Color(255, 180, 50), "[Drone] Deactivated.")
 end
 
 -- HOOKS
