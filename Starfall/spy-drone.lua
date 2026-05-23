@@ -5,6 +5,7 @@
 --@github https://github.com/shiftytab/gmod-scripts/blob/main/Starfall/spy-drone.lua
 
 local MAX_LOGS = 20
+
 local LOG_COLOR = {
     DEFAULT = 1,
     RED     = 2,
@@ -16,8 +17,8 @@ local LOG_COLOR = {
 
 if SERVER then
     wire.adjustInputs(
-        { "Activate",  "TargetName", "Base",   "Drone", "INCREASE_FOV", "DECREASE_FOV" },
-        { "number",    "string",     "entity", "entity", "number", "number" }
+        { "Activate",  "TargetName", "Base",   "Drone", "INCREASE_FOV", "DECREASE_FOV", "ResetLogs" },
+        { "number",    "string",     "entity", "entity", "number", "number", "number" }
     )
 
     wire.adjustOutputs(
@@ -55,18 +56,24 @@ if SERVER then
     --]]
     local function addLog(...)
         local args = { ... }
+
         net.start("drone_log")
-        net.writeUInt(#args, 6) -- Up to 64 arguments per log line
+        net.writeUInt(#args, 6)
         
         for _, val in ipairs(args) do
             if type(val) == "number" then
-                net.writeBool(true)  -- True = Color Enum ID
+                net.writeBool(true)
                 net.writeUInt(val, 4) 
             else
-                net.writeBool(false) -- False = Text string
+                net.writeBool(false)
                 net.writeString(tostring(val))
             end
         end
+        net.send()
+    end
+
+    local function resetLogs()
+        net.start("drone_log_reset")
         net.send()
     end
 
@@ -180,10 +187,13 @@ if SERVER then
             if valid(value) then
                 addLog(LOG_COLOR.BLUE, "[Drone]", LOG_COLOR.GREY, " Entity '" .. portName .. "' connected")
             end
+
+        elseif portName == "ResetLogs" and value == 1 then
+            resetLogs()
         end
 
     end)
-    
+
     hook.add("remove", "onChipRemoved", function()
         timer.remove(TIMER_NAME)
     end)
@@ -207,10 +217,26 @@ if CLIENT then
         [LOG_COLOR.GREY]    = Color(140, 145, 150)
     }
 
+    local function createLogLine(timestampColor, mainColor, tag, text)
+        local clientTimestamp = "[" .. os.date("%X") .. "] "
+        return {
+            { isColor = true,  value = timestampColor },
+            { isColor = false, value = clientTimestamp },
+            { isColor = true,  value = mainColor },
+            { isColor = false, value = tag },
+            { isColor = true,  value = LOG_COLOR.DEFAULT },
+            { isColor = false, value = text }
+        }
+    end
+
     net.receive("drone_log", function()
         local count = net.readUInt(6)
         local segment = {}
         
+        local clientTimestamp = "[" .. os.date("%X") .. "] "
+        table.insert(segment, { isColor = true, value = LOG_COLOR.GREY })
+        table.insert(segment, { isColor = false, value = clientTimestamp })
+
         for i = 1, count do
             local isColor = net.readBool()
             if isColor then
@@ -226,6 +252,12 @@ if CLIENT then
         end
     end)
 
+    net.receive("drone_log_reset", function()
+        table.empty(logTable)
+        local clearSegment = createLogLine(LOG_COLOR.GREY, LOG_COLOR.AMBER, "[System]", " Console history cleared successfully.")
+        table.insert(logTable, clearSegment)
+    end)
+
 
     hook.add("render", "drawColoredLogs", function()
         render.clear(Color(15, 15, 20))
@@ -236,11 +268,10 @@ if CLIENT then
         
         render.pushMatrix(mat)
         
-        render.setColor(colorPalette[LOG_COLOR.GREEN])
-        
-        render.drawText(20, 20, "SYSTEM LOGS // SPY_DRONE")
+        render.setColor(colorPalette[LOG_COLOR.RED])
+        render.drawText(20, 20, "[  - SYSTEM LOGS // SPY_DRONE  -  ]")
         render.setColor(Color(50, 50, 55))
-        render.drawText(20, 40, "_________________________________")
+        render.drawText(20, 40, "______________________________________")
         
         local y = 80
         for i, logSegments in ipairs(logTable) do
@@ -259,7 +290,7 @@ if CLIENT then
                 end
             end
 
-            y = y + 25
+            y = y + 26
         end
         
         render.popMatrix()
