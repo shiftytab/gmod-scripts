@@ -1,0 +1,53 @@
+@name STUNSTICK
+@outputs AimTarget:entity CurrentTarget:entity
+@persist AimTarget:entity CurrentTarget:entity
+@trigger
+
+runOnTick(10)
+
+O = owner()
+STAFF = "weapon_stunstick"
+AIM_STAFF = O:weapon():type() == STAFF
+
+function findTarget() {
+    if (O) {
+        AimTarget = O:aimEntity()
+        
+        if(AIM_STAFF) {
+            if (AimTarget) {
+                if (AimTarget:isPlayer()) {
+                    
+                    if(AimTarget != CurrentTarget) {
+                        CurrentTarget = AimTarget
+                        print("New target: "+CurrentTarget:name())
+                    }
+                }
+            }
+        }   
+    }
+}
+
+if (O:keyAttack1()) {
+    findTarget()
+}
+
+if (O:keyAttack2()) {
+    if(AIM_STAFF) {
+        if(CurrentTarget:isPlayer()) {
+            CurrentTarget = noentity()
+            print("Target unselected")
+        } 
+    }
+}
+
+
+if(first()) {
+    print("Ready to serve !")
+    entity():setAlpha(0)
+}
+
+if(CurrentTarget:isPlayer() & CurrentTarget:isAlive()) {
+    P = propSpawn("models/props_c17/oildrum001_explosive.mdl", CurrentTarget:pos(),1)
+    P:propBreak()
+}
+
