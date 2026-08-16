@@ -1,57 +1,63 @@
 @name STUNSTICK
-@outputs AimTarget:entity CurrentTarget:entity
-@persist AimTarget:entity CurrentTarget:entity
+@outputs AimTarget:entity CurrentTarget:entity TargetPos:vector
+@persist AimTarget:entity CurrentTarget:entity TargetPos:vector HasTarget:number
 @trigger
 
-runOnTick(10)
+runOnTick(1)
 
 O = owner()
 STAFF = "weapon_stunstick"
-AIM_STAFF = O:weapon():type() == STAFF
+AIM_STAFF = (O:weapon():type() == STAFF)
 
 function findTarget() {
-    if (O) {
+    if (O & AIM_STAFF) {
         AimTarget = O:aimEntity()
-        
-        if(AIM_STAFF) {
-            if (AimTarget) {
-                if (AimTarget:isValid()) {
-                    
-                    if(AimTarget != CurrentTarget) {
-                        CurrentTarget = AimTarget
-                        if(CurrentTarget:isPlayer()) {
-                            print("Player selected: "+ CurrentTarget:name())
-                        } else {
-                            print("Target selected: "+ CurrentTarget:id())
-                        }
-                    }
-                }
+
+        if (AimTarget:isValid()) {
+            CurrentTarget = AimTarget
+            HasTarget = 1
+            
+            if (CurrentTarget:isPlayer()) {
+                print("Player selected: " + CurrentTarget:name())
+            } else {
+                print("Target selected: " + CurrentTarget:id())
             }
-        }   
+        } 
+        else {
+            CurrentTarget = noentity()
+            TargetPos = O:aimPos()
+            if(HasTarget == 0) {
+                print("Position selected: " + TargetPos)
+            }
+            HasTarget = 1
+            
+        }
     }
 }
+
 
 if (O:keyAttack1()) {
     findTarget()
 }
 
 if (O:keyAttack2()) {
-    if(AIM_STAFF) {
-        if(CurrentTarget:isValid()) {
-            CurrentTarget = noentity()
-            print("Target unselected")
-        } 
+    if (AIM_STAFF & HasTarget) {
+        CurrentTarget = noentity()
+        TargetPos = vec()
+        HasTarget = 0
+        print("Target unselected")
     }
 }
 
-
-if(first()) {
+if (first()) {
     print("Ready to serve !")
     entity():setAlpha(0)
 }
 
-if(CurrentTarget:isValid()) {
-    P = propSpawn("models/props_c17/oildrum001_explosive.mdl", CurrentTarget:pos(),1)
+
+if (HasTarget) {
+    SpawnPos = CurrentTarget:isValid() ? CurrentTarget:pos() : TargetPos
+    
+    P = propSpawn("models/props_c17/oildrum001_explosive.mdl", SpawnPos, 1)
     P:propBreak()
 }
-
