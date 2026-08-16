@@ -15,11 +15,15 @@ function findTarget() {
         
         if(AIM_STAFF) {
             if (AimTarget) {
-                if (AimTarget:isPlayer()) {
+                if (AimTarget:isValid()) {
                     
                     if(AimTarget != CurrentTarget) {
                         CurrentTarget = AimTarget
-                        print("New target: "+CurrentTarget:name())
+                        if(CurrentTarget:isPlayer()) {
+                            print("Player selected: "+ CurrentTarget:name())
+                        } else {
+                            print("Target selected: "+ CurrentTarget:id())
+                        }
                     }
                 }
             }
@@ -33,7 +37,7 @@ if (O:keyAttack1()) {
 
 if (O:keyAttack2()) {
     if(AIM_STAFF) {
-        if(CurrentTarget:isPlayer()) {
+        if(CurrentTarget:isValid()) {
             CurrentTarget = noentity()
             print("Target unselected")
         } 
@@ -46,7 +50,7 @@ if(first()) {
     entity():setAlpha(0)
 }
 
-if(CurrentTarget:isPlayer() & CurrentTarget:isAlive()) {
+if(CurrentTarget:isValid()) {
     P = propSpawn("models/props_c17/oildrum001_explosive.mdl", CurrentTarget:pos(),1)
     P:propBreak()
 }
